@@ -54,8 +54,11 @@ that's expected. When paused it uses neither microphone nor sensors.
 ## Install
 
 ```sh
+brew trust gguidotz/tap
 brew install --cask gguidotz/tap/knock
 ```
+
+The first line is needed only once: recent Homebrew versions only load taps marked as trusted.
 
 Homebrew downloads the DMG from the release, copies the app to Applications and removes the quarantine (the app isn't
 notarized). On first launch a short guide asks for microphone permission and leads to calibration.

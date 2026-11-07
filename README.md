@@ -56,8 +56,11 @@ mostra il pallino arancione del microfono: è normale (con i soli sensori non co
 ## Installazione
 
 ```sh
+brew trust gguidotz/tap
 brew install --cask gguidotz/tap/knock
 ```
+
+La prima riga serve una volta sola: le versioni recenti di Homebrew caricano solo i tap segnati come fidati.
 
 Homebrew scarica il DMG dalla release, copia l'app in Applicazioni e toglie la quarantena (l'app non è notarizzata).
 Al primo avvio una guida breve chiede il permesso del microfono e porta alla calibrazione.
