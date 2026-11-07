@@ -7,8 +7,27 @@ basso, a sinistra o a destra) e **quante volte**. Fanno 8 interruttori in più, 
 dei menu come una piccola griglia 2x2: il quadrato della zona toccata si accende per un attimo, con accanto il numero
 di tap.
 
-In questa prima versione gli interruttori si vedono e basta. Collegarli ad azioni (approvare o rifiutare in un'app,
-avanti e indietro tra le slide, togliere il microfono, aprire un'app) arriva nelle prossime.
+## Azioni
+
+Ogni interruttore può premere un tasto, aprire un'app o un indirizzo, eseguire un Comando Rapido, mettere il muto al
+microfono di sistema, spegnere il microfono di Knock o tutti i sensori. Le azioni cambiano con l'app in primo piano:
+
+| Profilo | Doppio a destra | Doppio a sinistra |
+|---|---|---|
+| Claude (app e Terminale) | Invio: approva | Esc: rifiuta |
+| Keynote, PowerPoint | slide avanti | slide indietro |
+
+In "Sempre", per tutte le altre app: triplo in alto a sinistra spegne tutti i sensori, triplo in basso a destra mette o
+toglie il muto al microfono, triplo in basso a sinistra spegne o riaccende il microfono di Knock. Tutto si cambia in
+Impostazioni › Azioni; le azioni che premono un tasto chiedono il permesso Accessibilità.
+
+## Modalità di ascolto
+
+- **Microfono e sensori** (predefinita): la più precisa.
+- **Solo sensori** (sperimentale, MacBook M2 e successivi): niente microfono e niente pallino arancione. Nella prova
+  77% dei gruppi giusti e 86% delle zone: i tap vicino alla cerniera si sentono peggio. Knock ci passa da solo quando
+  spegni il suo microfono o metti il muto di sistema, così un tap può riaccenderlo.
+- **Solo microfono**: per i Mac senza sensore.
 
 ## Come funziona
 
@@ -32,7 +51,7 @@ in uso reale servono un tavolo e una posizione del Mac stabili, e una nuova cali
 
 Il suono resta in memoria per meno di due secondi e non viene mai registrato, salvato o inviato. La calibrazione
 salva solo numeri (le caratteristiche dei tap) in `~/Library/Application Support/Knock/`. Mentre Knock ascolta, macOS
-mostra il pallino arancione del microfono: è normale. In pausa non usa né microfono né sensori.
+mostra il pallino arancione del microfono: è normale (con i soli sensori non compare). In pausa non usa né microfono né sensori.
 
 ## Installazione
 

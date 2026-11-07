@@ -6,8 +6,27 @@ Tap the desk two or three times in one of the four corners around your MacBook: 
 left or right) and **how many times**. That's 8 extra switches, with no accessory. It lives in the menu bar as a small
 2x2 grid: the square of the zone you tapped lights up for a moment, with the number of taps next to it.
 
-In this first version the switches are only shown. Linking them to actions (approve or reject in an app, next and
-previous slide, mute the microphone, open an app) comes in the next ones.
+## Actions
+
+Each switch can press a key, open an app or an address, run a Shortcut, mute the system microphone, turn off Knock's
+microphone or all the sensors. Actions change with the frontmost app:
+
+| Profile | Double right | Double left |
+|---|---|---|
+| Claude (app and Terminal) | Return: approve | Esc: reject |
+| Keynote, PowerPoint | next slide | previous slide |
+
+In "Always", for every other app: triple top left turns off all sensors, triple bottom right mutes or unmutes the
+microphone, triple bottom left turns Knock's microphone off or on. Everything can be changed in Settings › Actions;
+actions that press a key ask for the Accessibility permission.
+
+## Listening modes
+
+- **Microphone and sensors** (default): the most accurate.
+- **Sensors only** (experimental, MacBook M2 and later): no microphone and no orange dot. In the test 77% of groups
+  and 86% of zones right: taps near the hinge are heard less well. Knock switches to it by itself when you turn off its
+  microphone or mute the system, so a tap can turn it back on.
+- **Microphone only**: for Macs without the sensor.
 
 ## How it works
 
