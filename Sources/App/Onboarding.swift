@@ -8,7 +8,6 @@ struct OnboardingView: View {
     @ObservedObject var model: AppModel
     let close: () -> Void
     @State private var page = 0
-    @State private var micAsked = false
 
     static let size = CGSize(width: 500, height: 440)
 
@@ -48,9 +47,10 @@ struct OnboardingView: View {
             if model.micPermission == .authorized {
                 Button(L("Continua")) { page = 2 }.keyboardShortcut(.defaultAction).glassProminentButton()
             } else {
-                Button(L("Consenti il microfono")) {
-                    micAsked = true
-                    model.requestMicrophone { ok in if ok { page = 2 } }
+                Button(L("Controlla i permessi")) {
+                    model.prefs.onboardingDone = true
+                    close()
+                    model.showPermissions()
                 }
                 .keyboardShortcut(.defaultAction).glassProminentButton()
             }
@@ -80,7 +80,7 @@ struct OnboardingView: View {
                 .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             Text(L("Mentre Knock ascolta, macOS mostra il pallino arancione nella barra dei menu. Puoi mettere in pausa quando vuoi."))
                 .multilineTextAlignment(.center).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-            if micAsked && (model.micPermission == .denied || model.micPermission == .restricted) {
+            if (model.micPermission == .denied || model.micPermission == .restricted) {
                 Button(L("Apri Impostazioni › Microfono")) {
                     NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!)
                 }

@@ -105,6 +105,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             menu.addItem(sub)
         }
         menu.addItem(.separator())
+        menu.addItem(withTitle: L("Permessi…"), action: #selector(openPermissions), keyEquivalent: "").target = self
         menu.addItem(withTitle: L("Impostazioni…"), action: #selector(openSettings), keyEquivalent: ",").target = self
         menu.addItem(withTitle: L("Novità e aggiornamenti…"), action: #selector(openUpdates), keyEquivalent: "").target = self
         menu.addItem(withTitle: L("Invia un feedback…"), action: #selector(openFeedback), keyEquivalent: "").target = self
@@ -122,6 +123,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     @objc private func togglePause() { model.togglePause() }
     @objc private func calibrate() { model.showCalibration() }
+    @objc private func openPermissions() { model.showPermissions() }
     @objc private func openSettings() { model.showSettings(.general) }
     @objc private func openUpdates() { model.showSettings(.updates) }
     @objc private func openFeedback() { model.showSettings(.feedback) }

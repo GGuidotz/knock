@@ -78,6 +78,7 @@ private struct GeneralSettings: View {
 
             Section {
                 LabeledContent(L("Microfono")) { permissionLabel }
+                Button(L("Controlla i permessi…")) { model.showPermissions() }
                 LabeledContent(L("Sensore di movimento")) {
                     Text(MotionSensor.isAvailable ? (model.engine.motion.isRunning ? L("In uso") : L("Disponibile"))
                                                   : L("Non presente su questo Mac"))

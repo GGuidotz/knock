@@ -33,7 +33,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = StatusItemController(model: model)
         model.didLaunch()
         let firstLaunch = !model.prefs.onboardingDone
-        if firstLaunch { model.showOnboarding() }
+        if firstLaunch {
+            model.showOnboarding()
+        } else if !PermissionsChecker.allRequiredOK {
+            model.showPermissions()   // manca il microfono: la pagina dei permessi lo dice e lo sistema
+        }
         model.showWhatsNewIfUpdated(firstLaunch: firstLaunch)
     }
 

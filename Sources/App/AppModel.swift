@@ -30,6 +30,7 @@ final class AppModel: ObservableObject {
     private let onboardingWindow = OnboardingWindowController()
     private let whatsNewWindow = WhatsNewWindowController()
     private let calibrationWindow = CalibrationWindowController()
+    private let permissionsWindow = PermissionsWindowController()
     private var bag = Set<AnyCancellable>()
 
     var appVersion: String { Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0" }
@@ -91,6 +92,7 @@ final class AppModel: ObservableObject {
     func refresh() { apply() }
 
     func requestMicrophone(then done: @escaping @MainActor (Bool) -> Void) {
+        NSApp.activate()   // l'avviso di sistema compare davanti solo se l'app è attiva
         AVCaptureDevice.requestAccess(for: .audio) { ok in
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
@@ -148,6 +150,7 @@ final class AppModel: ObservableObject {
 
     func showOnboarding() { onboardingWindow.show(model: self) }
     func showCalibration() { calibrationWindow.show(model: self) }
+    func showPermissions() { permissionsWindow.show(model: self) }
     func showWhatsNewIfUpdated(firstLaunch: Bool) { whatsNewWindow.showIfUpdated(firstLaunch: firstLaunch) }
     func showWhatsNew() { whatsNewWindow.showCurrent() }
 }
