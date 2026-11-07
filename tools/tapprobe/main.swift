@@ -38,13 +38,15 @@ final class IMUStore {
 let imu = IMUStore()
 
 /// Colpi dal solo accelerometro: scostamento dalla linea di base (vettore x, y, z) che salta sopra soglia.
-/// Soglia = max(0,01 g, 8 deviazioni standard del rumore); il salto deve essere 2,5x il massimo degli ultimi 40 ms.
+/// Soglia = max(0,01 g, 8 deviazioni standard del rumore); il salto deve essere 2,5x il massimo che c'era PRIMA del colpo
+/// (da 40 a 10 ms fa): un tap sale in qualche millisecondo, quindi i campioni appena precedenti fanno già parte del colpo.
 final class MotionOnset {
     var base = (0.0, 0.0, 0.0), primed = 0
     var noiseVar = 1e-6
     var lastOnset = -1.0
     var ring = [Double](repeating: 0, count: 32), ringI = 0
     var onOnset: ((Double) -> Void)?
+    var maxSeen = 0.0, lastThr = 0.0
 
     func feed(_ s: IMUSample) {
         if primed < 400 {
@@ -56,8 +58,12 @@ final class MotionOnset {
         let d = (s.x - base.0, s.y - base.1, s.z - base.2)
         let mag = (d.0 * d.0 + d.1 * d.1 + d.2 * d.2).squareRoot()
         let thr = max(0.01, 8 * noiseVar.squareRoot())
-        let rise = mag > 2.5 * (ring.max() ?? 0)
+        // ring: ultimi 32 campioni (40 ms); si guarda solo la parte più vecchia, esclusi gli ultimi 8 (10 ms)
+        var before = 0.0
+        for k in 8..<ring.count { before = max(before, ring[(ringI - 1 - k + 2 * ring.count) % ring.count]) }
+        let rise = mag > 2.5 * before
         ring[ringI] = mag; ringI = (ringI + 1) % ring.count
+        maxSeen = max(maxSeen, mag); lastThr = thr
         if mag > thr && rise && s.t - lastOnset > 0.12 {
             lastOnset = s.t
             onOnset?(s.t)
@@ -454,10 +460,15 @@ while i < steps.count {
     print("\n   Tocca \(n == 2 ? "2 VOLTE  (tap tap)" : "3 VOLTE  (tap tap tap)")\n")
     Thread.sleep(forTimeInterval: 0.4)   // ignora rumori residui
     queue.sync { detector.closePattern(); detector.label = "\(z):\(kind)" }
+    motionOnset.maxSeen = 0
     while resultSem.wait(timeout: .now()) == .success {}  // svuota segnali vecchi
     if resultSem.wait(timeout: .now() + 8) == .timedOut {
         queue.sync { detector.label = "" }
-        print("   Non ho sentito nulla. Tocca un po' più forte. Riprovo tra 2 secondi...")
+        if motionOnly {
+            print(String(format: "   Non ho sentito nulla (colpo più forte: %.4f g, soglia %.4f g). Riprovo tra 2 secondi...", motionOnset.maxSeen, motionOnset.lastThr))
+        } else {
+            print("   Non ho sentito nulla. Tocca un po' più forte. Riprovo tra 2 secondi...")
+        }
         Thread.sleep(forTimeInterval: 2)
         continue
     }
