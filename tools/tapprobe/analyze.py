@@ -81,10 +81,14 @@ def report(name, X):
         print(f"  {z:16s} " + "  ".join(f"{v:8d}" for v in m[i]))
 
 
-report("audio", X_a)
+if np.abs(X_a).sum() > 0:
+    report("audio", X_a)
+else:
+    print("\nAudio: non registrato (modalità solo sensori).")
 if imu_present:
     report("IMU", X_i)
-    report("audio + IMU", np.hstack([X_a, X_i]))
+    if np.abs(X_a).sum() > 0:
+        report("audio + IMU", np.hstack([X_a, X_i]))
     print("\n== Picco medio accelerometro per zona (g, segno incluso) ==")
     ix = [imu_cols.index(c) for c in ("ax_pk", "ay_pk", "az_pk")]
     for i, z in enumerate(ZONES):

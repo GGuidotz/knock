@@ -8,6 +8,8 @@ import Accelerate
 import IOKit
 import IOKit.hid
 
+let motionOnly = CommandLine.arguments.contains("--sensori")
+
 // MARK: - Tempo
 var timebase = mach_timebase_info_data_t()
 mach_timebase_info(&timebase)
@@ -34,6 +36,41 @@ final class IMUStore {
     }
 }
 let imu = IMUStore()
+
+/// Colpi dal solo accelerometro: scostamento dalla linea di base (vettore x, y, z) che salta sopra soglia.
+/// Soglia = max(0,01 g, 8 deviazioni standard del rumore); il salto deve essere 2,5x il massimo degli ultimi 40 ms.
+final class MotionOnset {
+    var base = (0.0, 0.0, 0.0), primed = 0
+    var noiseVar = 1e-6
+    var lastOnset = -1.0
+    var ring = [Double](repeating: 0, count: 32), ringI = 0
+    var onOnset: ((Double) -> Void)?
+
+    func feed(_ s: IMUSample) {
+        if primed < 400 {
+            let a = primed == 0 ? 1.0 : 0.02
+            base = (base.0 + a * (s.x - base.0), base.1 + a * (s.y - base.1), base.2 + a * (s.z - base.2))
+            primed += 1
+            return
+        }
+        let d = (s.x - base.0, s.y - base.1, s.z - base.2)
+        let mag = (d.0 * d.0 + d.1 * d.1 + d.2 * d.2).squareRoot()
+        let thr = max(0.01, 8 * noiseVar.squareRoot())
+        let rise = mag > 2.5 * (ring.max() ?? 0)
+        ring[ringI] = mag; ringI = (ringI + 1) % ring.count
+        if mag > thr && rise && s.t - lastOnset > 0.12 {
+            lastOnset = s.t
+            onOnset?(s.t)
+            return
+        }
+        if s.t - lastOnset > 0.3 {
+            base = (base.0 + 0.01 * d.0, base.1 + 0.01 * d.1, base.2 + 0.01 * d.2)
+            if mag < thr / 2 { noiseVar = 0.995 * noiseVar + 0.005 * mag * mag }
+        }
+    }
+}
+let motionOnset = MotionOnset()
+var motionTick: DispatchSourceTimer?
 
 final class IMUContext { let kind: Int; let buf: UnsafeMutablePointer<UInt8>; init(kind: Int) { self.kind = kind; buf = .allocate(capacity: 64) } }
 var imuContexts: [IMUContext] = []
@@ -76,7 +113,9 @@ func startIMU() {
                     func i32(_ o: Int) -> Double {
                         Double(Int32(bitPattern: UInt32(r[o]) | UInt32(r[o+1]) << 8 | UInt32(r[o+2]) << 16 | UInt32(r[o+3]) << 24)) / 65536
                     }
-                    imu.add(kind: c.kind, IMUSample(t: nowSec(), x: i32(6), y: i32(10), z: i32(14)))
+                    let sample = IMUSample(t: nowSec(), x: i32(6), y: i32(10), z: i32(14))
+                    imu.add(kind: c.kind, sample)
+                    if motionOnly && c.kind == 3 { motionOnset.feed(sample) }
                 }, Unmanaged.passUnretained(ctx).toOpaque())
                 IOHIDDeviceScheduleWithRunLoop(d, CFRunLoopGetCurrent(), CFRunLoopMode.defaultMode.rawValue)
             }
@@ -255,6 +294,18 @@ final class Detector {
         lastTapT = row.t
     }
 
+    /// Modalità solo sensori: un colpo dell'accelerometro all'istante t (le caratteristiche audio restano a zero).
+    func addMotionTap(t: Double) {
+        var row = TapRow()
+        row.label = label
+        row.t = t
+        row.bands = Array(repeating: 0, count: nBands)
+        (row.imu, row.imuN) = imuFeatures(at: t)
+        if !openRows.isEmpty && row.t - lastTapT > 0.45 { closePattern() }
+        openRows.append(row)
+        lastTapT = row.t
+    }
+
     var patternID = 0
     var verbose = false
     var onPattern: ((Int, Bool) -> Void)?
@@ -284,7 +335,7 @@ final class Detector {
 }
 
 // MARK: - Main
-let path = CommandLine.arguments.dropFirst().first ?? "data/taps.csv"
+let path = CommandLine.arguments.dropFirst().first(where: { !$0.hasPrefix("--") }) ?? (motionOnly ? "data/taps_sensori.csv" : "data/taps.csv")
 try? FileManager.default.createDirectory(atPath: (path as NSString).deletingLastPathComponent, withIntermediateDirectories: true)
 if !FileManager.default.fileExists(atPath: path) {
     let header = ["label", "pattern", "pattern_size", "tap", "t", "level_db", "peak_db", "centroid", "decay_ms"]
@@ -296,26 +347,45 @@ guard let out = FileHandle(forWritingAtPath: path) else { print("impossibile scr
 out.seekToEndOfFile()
 
 let sem = DispatchSemaphore(value: 0)
-var micOK = false
-AVCaptureDevice.requestAccess(for: .audio) { micOK = $0; sem.signal() }
-sem.wait()
+var micOK = motionOnly
+if !motionOnly {
+    AVCaptureDevice.requestAccess(for: .audio) { micOK = $0; sem.signal() }
+    sem.wait()
+}
 guard micOK else { print("Permesso microfono negato: Impostazioni di Sistema > Privacy e sicurezza > Microfono > Terminale."); exit(1) }
 
 startIMU()
 
 let engine = AVAudioEngine()
-let input = engine.inputNode
-let fmt = input.outputFormat(forBus: 0)
-print("Microfono: \(Int(fmt.sampleRate)) Hz, \(fmt.channelCount) canali")
-let detector = Detector(sr: fmt.sampleRate, out: out)
 let queue = DispatchQueue(label: "tapprobe")
-input.installTap(onBus: 0, bufferSize: 1024, format: fmt) { buffer, when in
-    guard let ch = buffer.floatChannelData else { return }
-    let x = Array(UnsafeBufferPointer(start: ch[0], count: Int(buffer.frameLength)))
-    let h = when.isHostTimeValid ? when.hostTime : 0
-    queue.async { detector.process(x, hostTime: h) }
+let detector: Detector
+if motionOnly {
+    print("Modalità SOLO SENSORI: il microfono non viene usato.")
+    detector = Detector(sr: 48000, out: out)
+    motionOnset.onOnset = { t in
+        // le caratteristiche servono 100 ms dopo il colpo
+        queue.asyncAfter(deadline: .now() + 0.13) { detector.addMotionTap(t: t) }
+    }
+    let tick = DispatchSource.makeTimerSource(queue: queue)
+    tick.schedule(deadline: .now(), repeating: 0.05)
+    tick.setEventHandler {
+        if !detector.openRows.isEmpty && nowSec() - detector.lastTapT > 0.6 { detector.closePattern() }
+    }
+    tick.resume()
+    motionTick = tick
+} else {
+    let input = engine.inputNode
+    let fmt = input.outputFormat(forBus: 0)
+    print("Microfono: \(Int(fmt.sampleRate)) Hz, \(fmt.channelCount) canali")
+    detector = Detector(sr: fmt.sampleRate, out: out)
+    input.installTap(onBus: 0, bufferSize: 1024, format: fmt) { buffer, when in
+        guard let ch = buffer.floatChannelData else { return }
+        let x = Array(UnsafeBufferPointer(start: ch[0], count: Int(buffer.frameLength)))
+        let h = when.isHostTimeValid ? when.hostTime : 0
+        queue.async { detector.process(x, hostTime: h) }
+    }
+    do { try engine.start() } catch { print("Errore avvio audio: \(error)"); exit(1) }
 }
-do { try engine.start() } catch { print("Errore avvio audio: \(error)"); exit(1) }
 
 Thread.sleep(forTimeInterval: 1.0)
 print("IMU: accelerometro \(imu.accelCount) campioni, giroscopio \(imu.gyroCount) campioni nel primo secondo")
@@ -350,7 +420,7 @@ func clear() { print("\u{1B}[2J\u{1B}[H", terminator: "") }
 
 clear()
 print("""
-KNOCK, prova di fattibilità
+KNOCK, prova di fattibilità\(motionOnly ? " (SOLO SENSORI, niente microfono)" : "")
 
 Preparazione (1 minuto):
   1. Mac aperto sul tavolo, non muoverlo per tutta la prova.
@@ -412,7 +482,7 @@ queue.sync { detector.label = "rumore:nessuno" }
 for s in stride(from: 30, to: 0, by: -1) { print("\r   scrivi... \(s) s   ", terminator: ""); fflush(stdout); Thread.sleep(forTimeInterval: 1) }
 Thread.sleep(forTimeInterval: 0.7)
 queue.sync { detector.closePattern(); detector.label = "" }
-engine.stop()
+if !motionOnly { engine.stop() }
 out.closeFile()
 print("\n\nFinito. Pattern letti giusti: \(right)/\(done). Falsi doppi/tripli durante la digitazione: \(noise).")
-print("Dati in \(path). Torna da Claude: lancio io l'analisi delle zone.")
+print("Dati in \(path). Torna da Claude: lancio io l'analisi.")
