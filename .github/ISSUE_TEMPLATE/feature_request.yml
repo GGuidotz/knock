@@ -1,0 +1,16 @@
+name: Idea
+description: Un'azione da collegare a un interruttore, un tavolo dove non funziona, un modo migliore di calibrare. An action to link to a switch, a desk where it doesn't work, a better way to calibrate.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: L'idea / The idea
+      description: Cosa vorresti e perché ti servirebbe. What you'd like and why it would help.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: App, macOS, Mac
+      description: Compilato dall'app. Filled in by the app.

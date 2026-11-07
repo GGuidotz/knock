@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>local.knock.app</string>
+	<key>CFBundleName</key>
+	<string>Knock</string>
+	<key>CFBundleDisplayName</key>
+	<string>Knock</string>
+	<key>CFBundleExecutable</key>
+	<string>Knock</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>__VERSION__</string>
+	<key>CFBundleVersion</key>
+	<string>__BUILD__</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>it</string>
+		<string>en</string>
+	</array>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.utilities</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>© 2026 gguidotz · github.com/GGuidotz/knock</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Knock ascolta i tap sul tavolo accanto al Mac. Il suono resta in memoria per meno di due secondi e non viene mai salvato né inviato.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+</dict>
+</plist>

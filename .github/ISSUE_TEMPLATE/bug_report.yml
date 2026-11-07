@@ -1,0 +1,23 @@
+name: Problema / Problem
+description: Qualcosa non funziona come dovrebbe. Something doesn't work as it should.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Cosa succede / What happens
+      description: Cosa hai fatto, cosa ti aspettavi, cosa è successo. What you did, what you expected, what happened.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: App, macOS, Mac
+      description: Compilato dall'app (Impostazioni › Feedback). Filled in by the app (Settings › Feedback).
+      placeholder: Knock 0.1.0 (2) · macOS 27.0.1 · Mac14,2 · it
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostica / Diagnostics
+      description: Impostazioni › Feedback › Copia report, poi incolla qui. Settings › Feedback › Copy Report, then paste here.
+      render: markdown
