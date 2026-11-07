@@ -15,7 +15,11 @@ final class CalibrationSession: ObservableObject {
     @Published private(set) var phase = Phase.intro
     @Published private(set) var index = 0
     @Published private(set) var feedback = ""
+    /// Il classificatore della modalità in cui si è calibrato (quello di cui si mostra l'accuratezza).
     @Published private(set) var result: ZoneClassifier?
+    /// Tutti quelli ricavati dagli stessi esempi (con microfono + sensori: anche solo microfono e solo sensori).
+    private var trained: [ListeningMode: ZoneClassifier] = [:]
+    @Published private(set) var mode = ListeningMode.hybrid
     @Published private(set) var heard = false
 
     let steps: [Step]
@@ -63,7 +67,7 @@ final class CalibrationSession: ObservableObject {
     }
 
     func save() {
-        model?.endCalibration(result: result)
+        model?.endCalibration(result: trained)
         phase = .intro   // già chiusa: la finestra che si chiude non deve annullare nulla
     }
 
@@ -93,7 +97,9 @@ final class CalibrationSession: ObservableObject {
 
     private func finish() {
         waitTask?.cancel()
-        guard let c = ZoneClassifier(samples: samples, usesMotion: motionSeen > samples.count / 2) else {
+        mode = model?.engine.activeMode ?? .hybrid
+        trained = CalibrationStore.train(samples, mode: mode, motionSeen: motionSeen > samples.count / 2)
+        guard let c = trained[mode] else {
             phase = .failed(L("Non ho abbastanza esempi per ogni zona. Riprova."))
             model?.endCalibration(result: nil)
             return
@@ -174,7 +180,9 @@ struct CalibrationView: View {
                      ? L("Bene. Da ora i tap in queste zone diventano interruttori.")
                      : L("Così così: prova a toccare sempre lo stesso punto, un po' più deciso, e ricalibra."))
                     .multilineTextAlignment(.center).foregroundStyle(.secondary)
-                if !r.usesMotion {
+                if session.mode == .motionOnly {
+                    Text(L("Calibrazione per l'ascolto con i soli sensori.")).font(.callout).foregroundStyle(.secondary)
+                } else if !r.usesMotion {
                     Text(L("Il sensore di movimento non ha risposto: uso solo il microfono."))
                         .font(.callout).foregroundStyle(.secondary)
                 }

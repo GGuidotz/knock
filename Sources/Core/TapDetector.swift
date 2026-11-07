@@ -140,7 +140,8 @@ final class TapDetector {
         }
 
         let t = time(of: onset)
-        let (motionFeatures, hasMotion) = motionFeaturesAt(t)
+        let (motionFeatures, hasMotion): ([Double], Bool) = motion.map { Self.motionFeatures($0, at: t) }
+            ?? (Array(repeating: 0, count: Self.motionFeatureCount), false)
         let tap = Tap(t: t, features: [level, peak, centroid / 1000, decay] + bands + motionFeatures,
                       motion: hasMotion, level: level)
         if let last = open.last, t - last.t > 0.45 { closeGroup() }
@@ -172,8 +173,9 @@ final class TapDetector {
         return power
     }
 
-    private func motionFeaturesAt(_ t: Double) -> ([Double], Bool) {
-        guard let motion, motion.isRunning else { return (Array(repeating: 0, count: Self.motionFeatureCount), false) }
+    /// Picco con segno ed energia su x, y, z di accelerometro e giroscopio intorno all'istante t (12 valori).
+    static func motionFeatures(_ motion: MotionSensor, at t: Double) -> (values: [Double], ok: Bool) {
+        guard motion.isRunning else { return (Array(repeating: 0, count: motionFeatureCount), false) }
         var out: [Double] = []
         var ok = true
         for kind in [MotionSensor.Kind.accel, .gyro] {

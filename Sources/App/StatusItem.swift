@@ -23,9 +23,11 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         model.onEvent = { [weak self] e in self?.show(e) }
         model.prefs.objectWillChange.receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.redraw() }.store(in: &bag)
+        model.$systemMicMuted.receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.redraw() }.store(in: &bag)
         model.$engineState.receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.redraw() }.store(in: &bag)
-        model.$classifier.receive(on: RunLoop.main)
+        model.$classifiers.receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.redraw() }.store(in: &bag)
         redraw()
     }
@@ -67,6 +69,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         }
         if !model.isCalibrated { return L("da calibrare") }
         switch model.engineState {
+        case .running where model.effectiveMode == .motionOnly: return L("in ascolto con i soli sensori")
         case .running: return L("in ascolto")
         case .failed(let why): return L("non riesco ad ascoltare: %@", why)
         case .stopped: return L("in pausa")
@@ -81,7 +84,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         status.isEnabled = false
         menu.addItem(status)
         if let last = model.events.first {
-            let line = NSMenuItem(title: L("Ultimo: %@", Self.describe(last)), action: nil, keyEquivalent: "")
+            let line = NSMenuItem(title: L("Ultimo: %@", Self.describe(last) + (last.actionTitle.map { " → " + $0 } ?? "")),
+                                  action: nil, keyEquivalent: "")
             line.isEnabled = false
             menu.addItem(line)
         }
@@ -91,12 +95,15 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             let pause = model.prefs.listening ? L("Metti in pausa") : L("Riprendi l'ascolto")
             menu.addItem(withTitle: pause, action: #selector(togglePause), keyEquivalent: "").target = self
         }
+        if model.prefs.knockMicOff {
+            menu.addItem(withTitle: L("Riaccendi il microfono di Knock"), action: #selector(knockMic), keyEquivalent: "").target = self
+        }
         menu.addItem(withTitle: model.isCalibrated ? L("Ricalibra…") : L("Calibra…"),
                      action: #selector(calibrate), keyEquivalent: "").target = self
         if !model.events.isEmpty {
             let recent = NSMenu()
             for e in model.events.prefix(12) {
-                let it = NSMenuItem(title: Self.describe(e), action: nil, keyEquivalent: "")
+                let it = NSMenuItem(title: Self.describe(e) + (e.actionTitle.map { " → " + $0 } ?? ""), action: nil, keyEquivalent: "")
                 it.isEnabled = false
                 recent.addItem(it)
             }
@@ -124,6 +131,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     @objc private func togglePause() { model.togglePause() }
     @objc private func calibrate() { model.showCalibration() }
     @objc private func openPermissions() { model.showPermissions() }
+    @objc private func knockMic() { model.toggleKnockMic() }
     @objc private func openSettings() { model.showSettings(.general) }
     @objc private func openUpdates() { model.showSettings(.updates) }
     @objc private func openFeedback() { model.showSettings(.feedback) }

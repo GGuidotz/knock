@@ -10,8 +10,14 @@ final class Preferences: ObservableObject {
     @Published var listening: Bool { didSet { defaults.set(listening, forKey: "listening") } }
     /// 0…1: quanto deve essere netto un colpo per contare.
     @Published var sensitivity: Double { didSet { defaults.set(sensitivity, forKey: "sensitivity") } }
-    /// Usa anche accelerometro e giroscopio del Mac (se ci sono).
-    @Published var useMotion: Bool { didSet { defaults.set(useMotion, forKey: "useMotion") } }
+    /// Come ascolta: microfono e sensori, solo sensori, solo microfono.
+    @Published var mode: ListeningMode { didSet { defaults.set(mode.rawValue, forKey: "mode") } }
+    /// Il microfono di Knock è spento dall'azione apposita: si ascolta con i soli sensori.
+    @Published var knockMicOff: Bool { didSet { defaults.set(knockMicOff, forKey: "knockMicOff") } }
+    /// Suono breve quando un interruttore scatta.
+    @Published var sound: Bool { didSet { defaults.set(sound, forKey: "sound") } }
+    /// Le azioni: "Sempre" e i profili per app.
+    @Published var profiles: [ActionProfile] { didSet { save(profiles, "profiles") } }
     /// Ignora i tap mentre scrivi o usi il trackpad.
     @Published var ignoreWhileTyping: Bool { didSet { defaults.set(ignoreWhileTyping, forKey: "ignoreWhileTyping") } }
     /// La voce nella barra lampeggia con la zona riconosciuta.
@@ -26,7 +32,16 @@ final class Preferences: ObservableObject {
         let d = UserDefaults.standard
         listening = d.object(forKey: "listening") as? Bool ?? true
         sensitivity = d.object(forKey: "sensitivity") as? Double ?? 0.5
-        useMotion = d.object(forKey: "useMotion") as? Bool ?? true
+        // 0.1 aveva "usa anche il sensore di movimento": spento = solo microfono.
+        let legacyMotion = d.object(forKey: "useMotion") as? Bool ?? true
+        mode = ListeningMode(rawValue: d.string(forKey: "mode") ?? "") ?? (legacyMotion ? .hybrid : .micOnly)
+        knockMicOff = d.bool(forKey: "knockMicOff")
+        sound = d.bool(forKey: "sound")
+        if let data = d.data(forKey: "profiles"), let p = try? JSONDecoder().decode([ActionProfile].self, from: data) {
+            profiles = p
+        } else {
+            profiles = ActionProfiles.defaults
+        }
         ignoreWhileTyping = d.object(forKey: "ignoreWhileTyping") as? Bool ?? true
         flashMenuBar = d.object(forKey: "flashMenuBar") as? Bool ?? true
         onboardingDone = d.bool(forKey: "onboardingDone")

@@ -25,6 +25,8 @@ final class MotionSensor {
     private var thread: Thread?
     private var runLoop: CFRunLoop?
     private(set) var sampleCount = 0
+    /// Ogni campione dell'accelerometro, sul thread del sensore (lo usa il rilevatore senza microfono).
+    var onAccel: ((MotionSample) -> Void)?
 
     private final class Context {
         let kind: Kind
@@ -105,6 +107,7 @@ final class MotionSensor {
     }
 
     private func add(_ kind: Kind, _ s: MotionSample) {
+        if kind == .accel { onAccel?(s) }
         lock.lock(); defer { lock.unlock() }
         sampleCount &+= 1
         if kind == .accel {

@@ -21,6 +21,7 @@ struct SettingsView: View {
             switch model.settingsTab {
             case .general: GeneralSettings(model: model, prefs: prefs)
             case .switches: SwitchesSettings(model: model, prefs: prefs)
+            case .actions: ActionsSettings(model: model, prefs: prefs)
             case .updates: UpdatesSettings(updater: model.updater, prefs: prefs)
             case .feedback: FeedbackSettings(model: model)
             }
@@ -118,23 +119,44 @@ private struct SwitchesSettings: View {
     var body: some View {
         Form {
             Section {
-                if let c = model.classifier {
-                    LabeledContent(L("Calibrazione")) {
-                        Text(L("%d%% negli esempi · %@", Int((c.accuracy * 100).rounded()),
-                               c.createdAt.formatted(date: .abbreviated, time: .shortened)))
-                            .monospacedDigit()
+                Picker(L("Ascolta con"), selection: $prefs.mode) {
+                    ForEach(ListeningMode.allCases) { m in
+                        Text(m.title).tag(m).disabled(m.usesMotion && !MotionSensor.isAvailable)
                     }
-                } else {
-                    LabeledContent(L("Calibrazione")) { Text(L("Da fare")).foregroundStyle(.orange) }
+                }
+                if model.micSuspended && MotionSensor.isAvailable {
+                    LabeledContent(L("Adesso")) {
+                        Text(prefs.knockMicOff ? L("Microfono di Knock spento: solo sensori") : L("Microfono di sistema muto: solo sensori"))
+                            .foregroundStyle(.secondary)
+                    }
+                    if prefs.knockMicOff { Button(L("Riaccendi il microfono di Knock")) { prefs.knockMicOff = false } }
+                }
+            } footer: {
+                Footnote(L("Con i soli sensori non serve il microfono e non compare il pallino arancione, ma i tap vicino alla cerniera si sentono peggio (nella prova: gruppi giusti 77%, zone 86%). Ogni modalità ha la sua calibrazione; calibrando con microfono e sensori si preparano anche le altre due."))
+            }
+
+            Section {
+                ForEach(ListeningMode.allCases) { m in
+                    LabeledContent(m.title) {
+                        if let c = model.classifiers[m] {
+                            Text(L("%d%% negli esempi · %@", Int((c.accuracy * 100).rounded()),
+                                   c.createdAt.formatted(date: .abbreviated, time: .shortened)))
+                                .monospacedDigit()
+                        } else {
+                            Text(L("Da fare")).foregroundStyle(m == model.effectiveMode ? Color.orange : Color.secondary)
+                        }
+                    }
                 }
                 HStack {
                     Button(model.isCalibrated ? L("Ricalibra…") : L("Calibra…")) { model.showCalibration() }
-                    if model.isCalibrated {
-                        Button(L("Dimentica")) { model.forgetCalibration() }
+                    if !model.classifiers.isEmpty {
+                        Button(L("Dimentica tutte")) { model.forgetCalibration() }
                     }
                 }
+            } header: {
+                Text(L("Calibrazione"))
             } footer: {
-                Footnote(L("Ricalibra se sposti il Mac o cambi tavolo: la firma di ogni punto dipende dalla superficie."))
+                Footnote(L("La calibrazione si fa nella modalità scelta sopra. Ricalibra se sposti il Mac o cambi tavolo: la firma di ogni punto dipende dalla superficie."))
             }
 
             Section {
@@ -146,11 +168,10 @@ private struct SwitchesSettings: View {
                     }
                 }
                 Toggle(L("Ignora i tap mentre scrivi"), isOn: $prefs.ignoreWhileTyping)
-                Toggle(L("Usa anche il sensore di movimento"), isOn: $prefs.useMotion)
-                    .disabled(!MotionSensor.isAvailable)
                 Toggle(L("Fai lampeggiare la voce nella barra"), isOn: $prefs.flashMenuBar)
+                Toggle(L("Suono breve quando scatta"), isOn: $prefs.sound)
             } footer: {
-                Footnote(L("Se perde dei tap, alza la sensibilità; se scatta da solo, abbassala. Con \"Ignora i tap mentre scrivi\" non scatta nulla fino a un secondo dopo l'ultimo tasto. Cambiare il sensore di movimento richiede di ricalibrare."))
+                Footnote(L("Se perde dei tap, alza la sensibilità; se scatta da solo, abbassala. Con \"Ignora i tap mentre scrivi\" non scatta nulla fino a un secondo dopo l'ultimo tasto."))
             }
 
             Section {
@@ -160,20 +181,21 @@ private struct SwitchesSettings: View {
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(model.events.prefix(8)) { e in
-                        HStack {
-                            Text(StatusItemController.describe(e))
-                            Spacer()
-                            if e.zone != nil {
-                                Text(L("%d%%", Int((e.confidence * 100).rounded())))
-                                    .monospacedDigit().foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack {
+                                Text(StatusItemController.describe(e))
+                                Spacer()
+                                if e.zone != nil {
+                                    Text(L("%d%%", Int((e.confidence * 100).rounded())))
+                                        .monospacedDigit().foregroundStyle(.secondary)
+                                }
                             }
+                            if let a = e.actionTitle { Text(a).font(.caption).foregroundStyle(.secondary) }
                         }
                     }
                 }
             } header: {
                 Text(L("Prova dal vivo"))
-            } footer: {
-                Footnote(L("In questa versione gli 8 interruttori si vedono e basta: collegarli ad azioni nelle app arriva nelle prossime."))
             }
         }
     }

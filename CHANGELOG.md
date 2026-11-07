@@ -1,5 +1,19 @@
 # Novità di Knock
 
+## 0.2.0 · 2026-11-07
+Prima versione pubblica: gli 8 interruttori fanno qualcosa, e Knock può ascoltare anche senza microfono.
+
+### Novità
+- **Azioni sugli interruttori.** Ogni doppio o triplo tap può premere un tasto, aprire un'app o un indirizzo, eseguire un Comando Rapido, mettere il muto al microfono di sistema, spegnere il microfono di Knock o tutti i sensori.
+- **Profili per app.** Le azioni possono cambiare con l'app in primo piano: pronti quelli per Claude e il Terminale (doppio a destra approva, doppio a sinistra rifiuta) e per Keynote e PowerPoint (slide avanti e indietro), più "Sempre" per tutte le altre.
+- **Solo sensori (sperimentale).** Sui MacBook con Apple Silicon (M2 e successivi) Knock può ascoltare con il solo sensore di movimento: niente microfono e niente pallino arancione. Quando spegni il microfono di Knock o metti il muto di sistema ci passa da solo, così un tap può riaccenderlo.
+- **Spegni tutti i sensori.** Un interruttore che spegne microfono e sensori per risparmiare batteria; si riaccende dal menu.
+- **Calibrazione per modalità.** Calibrando con microfono e sensori si preparano anche le modalità solo microfono e solo sensori.
+- **Suono breve** facoltativo quando un interruttore scatta.
+
+### Miglioramenti
+- **Pagina dei permessi con Accessibilità**, che serve alle azioni che premono un tasto.
+
 ## 0.1.0 · 2026-11-07
 Prima versione: i tap sul tavolo accanto al Mac diventano 8 interruttori.
 

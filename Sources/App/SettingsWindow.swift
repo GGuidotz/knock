@@ -7,13 +7,14 @@ import AppKit
 import SwiftUI
 
 enum SettingsTab: String, CaseIterable, Identifiable {
-    case general, switches, updates, feedback
+    case general, switches, actions, updates, feedback
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .general: L("Generale")
         case .switches: L("Interruttori")
+        case .actions: L("Azioni")
         case .updates: L("Aggiornamenti")
         case .feedback: L("Feedback")
         }
@@ -23,6 +24,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .general: "gearshape"
         case .switches: "square.grid.2x2"
+        case .actions: "bolt"
         case .updates: "arrow.down.circle"
         case .feedback: "bubble.left.and.text.bubble.right"
         }
@@ -84,7 +86,7 @@ enum TranslucentWindow {
     }
 }
 
-/// La barra delle schede: un controllo che galleggia, quindi di vetro. ⌘1…⌘4 per passare da una scheda all'altra.
+/// La barra delle schede: un controllo che galleggia, quindi di vetro. ⌘1…⌘5 per passare da una scheda all'altra.
 struct SettingsTabBar: View {
     @Binding var selection: SettingsTab
 

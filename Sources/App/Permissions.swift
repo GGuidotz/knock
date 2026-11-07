@@ -45,7 +45,10 @@ final class PermissionsChecker: ObservableObject {
 
     func stopWatching() { timer = nil }
 
-    static var allRequiredOK: Bool { AVCaptureDevice.authorizationStatus(for: .audio) == .authorized }
+    /// Il microfono è obbligatorio solo se la modalità scelta lo usa.
+    static var allRequiredOK: Bool {
+        !AppModel.shared.effectiveMode.usesMic || AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
+    }
 
     func checkAll() async {
         mic = AVCaptureDevice.authorizationStatus(for: .audio)
@@ -162,8 +165,9 @@ struct PermissionsView: View {
     @ObservedObject var model: AppModel
     let close: () -> Void
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
+    @State private var accessibility = ActionRunner.hasAccessibility
 
-    static let size = CGSize(width: 540, height: 520)
+    static let size = CGSize(width: 560, height: 610)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -174,6 +178,17 @@ struct PermissionsView: View {
             VStack(spacing: 10) {
                 microphoneRow
                 motionRow
+                PermissionRow(symbol: "accessibility", title: L("Accessibilità"),
+                              detail: accessibility ? L("Concesso: le azioni possono premere tasti nell'app in primo piano.")
+                                  : (model.actionsNeedAccessibility
+                                     ? L("Serve alle tue azioni che premono un tasto (per esempio Invio in Claude o le frecce nelle slide).")
+                                     : L("Facoltativo: serve solo alle azioni che premono un tasto.")),
+                              status: accessibility ? .ok : (model.actionsNeedAccessibility ? .missing : .unknown),
+                              optional: !model.actionsNeedAccessibility) {
+                    if !accessibility {
+                        Button(L("Consenti…")) { ActionRunner.requestAccessibility() }
+                    }
+                }
                 PermissionRow(symbol: "keyboard", title: L("Riconoscere quando scrivi"),
                               detail: L("Per ignorare i tap mentre usi tastiera o trackpad. Non serve nessun permesso."),
                               status: checker.idleTest, optional: false) { EmptyView() }
@@ -207,6 +222,9 @@ struct PermissionsView: View {
         .frame(width: Self.size.width, height: Self.size.height)
         .task { await checker.checkAll() }
         .onAppear { checker.startWatching() }
+        .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
+            accessibility = ActionRunner.hasAccessibility
+        }
         .onDisappear { checker.stopWatching() }
     }
 

@@ -66,9 +66,33 @@ struct TapEvent: Identifiable {
     let zone: Zone?
     /// 0…1: quanto il gruppo somiglia agli esempi della calibrazione.
     let confidence: Double
+    /// Cosa è successo (azione eseguita o errore), per il registro e il menu.
+    var actionTitle: String?
 
     var tapSwitch: TapSwitch? {
         guard let zone, let count = TapCount(rawValue: taps) else { return nil }
         return TapSwitch(zone: zone, count: count)
     }
+}
+
+/// Come ascolta Knock.
+enum ListeningMode: String, CaseIterable, Codable, Identifiable {
+    /// Microfono + sensori di movimento (predefinita).
+    case hybrid
+    /// Solo sensori di movimento: niente microfono, niente pallino arancione (sperimentale, MacBook M2 e successivi).
+    case motionOnly
+    /// Solo microfono (Mac senza sensore o sensore spento).
+    case micOnly
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .hybrid: L("Microfono e sensori")
+        case .motionOnly: L("Solo sensori (sperimentale)")
+        case .micOnly: L("Solo microfono")
+        }
+    }
+
+    var usesMic: Bool { self != .motionOnly }
+    var usesMotion: Bool { self != .micOnly }
 }

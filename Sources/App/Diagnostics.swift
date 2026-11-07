@@ -5,7 +5,7 @@ import AppKit
 import Foundation
 
 enum DiagCategory: String {
-    case app, engine, update, feedback
+    case app, engine, actions, update, feedback
 }
 
 @MainActor
@@ -124,11 +124,14 @@ enum DiagnosticsReport {
         row("Listening", yesNo(prefs.listening))
         row("Sensitivity", String(format: "%.2f", prefs.sensitivity))
         row("Ignore while typing", yesNo(prefs.ignoreWhileTyping))
-        if let c = model.classifier {
-            row("Calibration", "\(c.samples.count) samples, accuracy \(Int(c.accuracy * 100))%, motion \(yesNo(c.usesMotion))")
-        } else {
-            row("Calibration", "none")
+        row("Mode", "\(prefs.mode.rawValue), effective \(model.effectiveMode.rawValue), Knock mic off \(yesNo(prefs.knockMicOff)), system mic muted \(yesNo(model.systemMicMuted))")
+        for m in ListeningMode.allCases {
+            if let c = model.classifiers[m] {
+                row("Calibration \(m.rawValue)", "\(c.samples.count) samples, accuracy \(Int(c.accuracy * 100))%")
+            }
         }
+        if model.classifiers.isEmpty { row("Calibration", "none") }
+        row("Profiles", "\(prefs.profiles.count), accessibility \(yesNo(ActionRunner.hasAccessibility))")
         row("Events this session", "\(model.events.count) (last 30 kept)")
         if let own = SystemInfo.ownUsage {
             row("This app now", String(format: "%.1f%% CPU, %d MB", own.cpu, Int(own.memory / 1_048_576)))
