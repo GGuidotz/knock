@@ -19,11 +19,12 @@ cask "knock" do
 
   app "Knock.app"
 
-  postflight do
+  postflight_steps do
     # L'app non è notarizzata (niente account Apple Developer): togliere la quarantena evita "Apri comunque".
-    system_command "/usr/bin/xattr",
-                   args:         ["-dr", "com.apple.quarantine", "#{appdir}/Knock.app"],
-                   must_succeed: false
+    run "/usr/bin/xattr",
+        args:           ["-dr", "com.apple.quarantine", "{{appdir}}/Knock.app"],
+        writable_paths: ["{{appdir}}/Knock.app"],
+        must_succeed:   false
   end
 
   uninstall quit: "local.knock.app"

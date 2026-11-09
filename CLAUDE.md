@@ -17,5 +17,5 @@ App macOS per la barra dei menu (Swift/SwiftUI, macOS 14+): tap sul tavolo accan
 - Design: Human Interface Guidelines; colore mai unico segnale; vetro solo sui controlli che galleggiano, dietro
   `if #available(macOS 26, *)` (`Sources/Island/Style.swift`). Interfaccia in italiano e inglese, niente emoji.
 - Leggerezza: sotto l'1% di CPU in ascolto; in pausa, senza calibrazione o con il Mac in stop niente microfono né sensori.
-- Prove guidate: Giulio preferisce sessioni passo per passo (mappa del tavolo, "tocca 2 volte qui") a istruzioni lunghe.
+- Prove guidate: meglio sessioni passo per passo (mappa del tavolo, "tocca 2 volte qui") a istruzioni lunghe.
 - Repo pubblico: mai dati personali in codice, commenti, commit.
