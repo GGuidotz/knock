@@ -47,7 +47,9 @@ enum ActionRunner {
             do { try p.run() } catch { return error.localizedDescription }
             return nil
         case .openURL(let s):
-            guard let url = URL(string: s), url.scheme != nil else { return L("Indirizzo non valido.") }
+            guard let url = URL(string: s), let scheme = url.scheme?.lowercased() else { return L("Indirizzo non valido.") }
+            // Solo indirizzi web e mail: niente schemi che aprono app o file.
+            guard ["http", "https", "mailto"].contains(scheme) else { return L("Questo tipo di indirizzo non è supportato.") }
             NSWorkspace.shared.open(url)
             return nil
         case .toggleSystemMute:

@@ -1,5 +1,15 @@
 # What's new in Knock
 
+## 0.2.1 · 2026-11-17
+Security update.
+
+### Improvements
+- **Tighter signing against code injection.** Knock now runs with the hardened runtime: another program can no longer slip into the app to use its permissions.
+- **Calibration readable only by your user.** The calibration folder and file are no longer accessible to other users of the Mac.
+
+### Bug Fixes
+- **"Open address" only accepts web and mail addresses** (http, https, mailto). Other kinds of address are rejected with a message.
+
 ## 0.2.0 · 2026-11-07
 First public version: the 8 switches do something, and Knock can listen without the microphone too.
 

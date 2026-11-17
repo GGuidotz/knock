@@ -234,3 +234,4 @@
 "Terminale" = "Terminal";
 "Vale quando %@ è in primo piano. Dove qui non c'è un'azione, vale quella di Sempre." = "Applies when %@ is in front. Where there's no action here, the Always one applies.";
 "in ascolto con i soli sensori" = "listening with sensors only";
+"Questo tipo di indirizzo non è supportato." = "This type of address is not supported.";
