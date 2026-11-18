@@ -2,8 +2,8 @@
 
 # Cask di Knock per il tap GGuidotz/homebrew-tap. Version e sha256 li aggiorna release.sh.
 cask "knock" do
-  version "0.2.0"
-  sha256 "f895f899135e4a7a8002e8c899f758b9dac8e3d953d40ab4378aa1e51845995c"
+  version "0.2.1"
+  sha256 "5e2134dfea869ef59911c85c7e36b993607f803aa5852d0f6b28dbe8316b7a68"
 
   url "https://github.com/GGuidotz/knock/releases/download/v#{version}/Knock-#{version}.dmg"
   name "Knock"
