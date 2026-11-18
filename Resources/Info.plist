@@ -35,6 +35,8 @@
 	<string>© 2026 gguidotz · github.com/GGuidotz/knock</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Knock ascolta i tap sul tavolo accanto al Mac. Il suono resta in memoria per meno di due secondi e non viene mai salvato né inviato.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Serve per eseguire nel Terminale il comando di aggiornamento, solo quando lo chiedi tu.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 </dict>

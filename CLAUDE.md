@@ -19,3 +19,4 @@ App macOS per la barra dei menu (Swift/SwiftUI, macOS 14+): tap sul tavolo accan
 - Leggerezza: sotto l'1% di CPU in ascolto; in pausa, senza calibrazione o con il Mac in stop niente microfono né sensori.
 - Prove guidate: meglio sessioni passo per passo (mappa del tavolo, "tocca 2 volte qui") a istruzioni lunghe.
 - Repo pubblico: mai dati personali in codice, commenti, commit.
+- Firma con hardened runtime ed entitlement in `Resources/Knock.entitlements` (microfono, Apple Events): da aggiornare se l'app usa una risorsa nuova (calendari, ecc.). build.sh verifica che il flag ci sia.

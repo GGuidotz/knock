@@ -1,5 +1,15 @@
 # Novità di Knock
 
+## 0.2.1 · 2026-11-17
+Aggiornamento di sicurezza.
+
+### Miglioramenti
+- **Firma più stretta contro l'iniezione di codice.** Knock ora si avvia con l'hardened runtime: un altro programma non può infilarsi nell'app per usare i suoi permessi.
+- **Calibrazione leggibile solo dal tuo utente.** La cartella e il file della calibrazione non sono più accessibili agli altri utenti del Mac.
+
+### Correzioni
+- **"Apri indirizzo" accetta solo indirizzi web e mail** (http, https, mailto). Gli altri tipi di indirizzo vengono rifiutati con un avviso.
+
 ## 0.2.0 · 2026-11-07
 Prima versione pubblica: gli 8 interruttori fanno qualcosa, e Knock può ascoltare anche senza microfono.
 

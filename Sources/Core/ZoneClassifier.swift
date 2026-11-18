@@ -132,9 +132,14 @@ enum CalibrationStore {
     }
 
     static func save(_ all: [ListeningMode: ZoneClassifier]) throws {
-        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let dir = url.deletingLastPathComponent()
+        // Cartella leggibile solo dal tuo utente (0700) e file 0600.
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true,
+                                                attributes: [.posixPermissions: 0o700])
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: dir.path)
         let dict = Dictionary(uniqueKeysWithValues: all.map { ($0.key.rawValue, $0.value) })
         try JSONEncoder().encode(dict).write(to: url, options: .atomic)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
     }
 
     static func delete() { try? FileManager.default.removeItem(at: url) }

@@ -115,16 +115,20 @@ plist_set KnockIconTier "$ICON_TIER"
 plutil -lint "$PLIST" >/dev/null
 xattr -cr "$APP"
 KC="$HOME/.nod-signing/nod-signing.keychain"
+ENTITLEMENTS="Resources/Knock.entitlements"
 if [ -f "$KC" ]; then
   SIGNING=local
   security unlock-keychain -p nod "$KC"
-  codesign --force --keychain "$KC" --sign "Nod Local Signing" "$APP"
+  codesign --force --options runtime --entitlements "$ENTITLEMENTS" --keychain "$KC" --sign "Nod Local Signing" "$APP"
 else
   SIGNING=adhoc
-  codesign --force --sign - "$APP"
+  codesign --force --options runtime --entitlements "$ENTITLEMENTS" --sign - "$APP"
   echo "Attenzione: firma ad hoc. A ogni build macOS può richiedere di nuovo il permesso del microfono (vedi make-signing-identity.sh di Nod)."
 fi
 codesign --verify --strict "$APP"
+# Senza hardened runtime un altro processo potrebbe iniettare codice e usare i permessi dell'app.
+SIGN_INFO="$(codesign -dv "$APP" 2>&1)"
+[[ "$SIGN_INFO" == *flags=*runtime* ]] || { echo "Manca l'hardened runtime"; exit 1; }
 echo "Pronto: $APP ($VERSION, build $BUILD_NUMBER, commit $COMMIT, firma $SIGNING, icona $ICON_TIER${ICON_CHECK:+: $ICON_CHECK})"
 
 case "$MODE" in
