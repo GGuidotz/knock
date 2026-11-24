@@ -66,10 +66,12 @@ Homebrew scarica il DMG dalla release, copia l'app in Applicazioni e toglie la q
 Al primo avvio una guida breve chiede il permesso del microfono e porta alla calibrazione.
 Aggiornare: `brew update && brew upgrade --cask knock`.
 
-Dai sorgenti (serve Xcode o gli strumenti a riga di comando):
+Dai sorgenti (serve Xcode o gli strumenti a riga di comando). `--recursive` scarica anche Sguardo, il sistema di
+design comune (github.com/GGuidotz/sguardo) in `Vendor/Sguardo`; se hai già clonato senza, esegui
+`git submodule update --init`:
 
 ```sh
-git clone https://github.com/GGuidotz/knock.git ~/Developer/knock
+git clone --recursive https://github.com/GGuidotz/knock.git ~/Developer/knock
 cd ~/Developer/knock && ./build.sh --install
 ```
 

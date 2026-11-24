@@ -43,6 +43,12 @@ cp CHANGELOG.md "$APP/Contents/Resources/CHANGELOG.md"   # Impostazioni › Aggi
 [ -f CHANGELOG.en.md ] && cp CHANGELOG.en.md "$APP/Contents/Resources/CHANGELOG.en.md"   # le stesse, in inglese
 
 SOURCES=(Sources/**/*.swift)
+# Sguardo, il sistema di design comune (github.com/GGuidotz/sguardo): submodule in Vendor/Sguardo, compilato insieme
+# all'app (un modulo solo, niente import). Per provare modifiche al kit senza aggiornare il submodule:
+# SGUARDO_DIR=~/Developer/design-system ./build.sh
+SGUARDO="${SGUARDO_DIR:-Vendor/Sguardo}/swift/Sources/Sguardo"
+[ -d "$SGUARDO" ] || { echo "Manca Sguardo: esegui git submodule update --init" >&2; exit 1; }
+SOURCES+=("$SGUARDO"/*.swift)
 # Apple Intelligence (FoundationModels, macOS 26): collegato "debole", così l'app parte anche su macOS 14 e 15.
 LINK=()
 SDK=$(xcrun --show-sdk-path 2>/dev/null || true)

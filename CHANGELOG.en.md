@@ -1,5 +1,14 @@
 # What's new in Knock
 
+## 0.2.2 · 2026-11-24
+A new look: the shapes, colors and motion of Sguardo, the design system shared by our apps.
+
+### Improvements
+- **Redesigned settings.** Rows on a translucent layer with a thin outline, capsule menus and short notes under each group. The tab bar floats at the bottom and shows the name of the selected tab; ⌘1…⌘5 work as before.
+- **Accent color of your choice.** In Settings › General: Knock green, the macOS accent color, or your own.
+- **First-run guide, calibration, permissions and What's New in the same style.** Capsule buttons, clearer titles, and the guide's steps change with a soft fade.
+- **Builds from a clone.** Sguardo comes with `git clone --recursive`: building from source has everything it needs.
+
 ## 0.2.1 · 2026-11-17
 Security update.
 

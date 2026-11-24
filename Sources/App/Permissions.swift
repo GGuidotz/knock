@@ -171,9 +171,10 @@ struct PermissionsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(L("Permessi")).font(.title2.weight(.semibold))
+            Text(L("Permessi")).font(SG.Font.title).accessibilityAddTraits(.isHeader)
             Text(L("Knock controlla da solo che tutto funzioni davvero. Quello che manca si sistema da qui."))
-                .foregroundStyle(.secondary)
+                .font(SG.Font.body)
+                .foregroundStyle(SG.Ink.secondary)
 
             VStack(spacing: 10) {
                 microphoneRow
@@ -187,6 +188,7 @@ struct PermissionsView: View {
                               optional: !model.actionsNeedAccessibility) {
                     if !accessibility {
                         Button(L("Consenti…")) { ActionRunner.requestAccessibility() }
+                            .buttonStyle(.sgSecondary)
                     }
                 }
                 PermissionRow(symbol: "keyboard", title: L("Riconoscere quando scrivi"),
@@ -195,31 +197,37 @@ struct PermissionsView: View {
                 PermissionRow(symbol: "power", title: L("Apri all'accesso"),
                               detail: L("Facoltativo: Knock parte da solo quando accendi il Mac."),
                               status: launchAtLogin ? .ok : .missing, optional: true) {
-                    Toggle("", isOn: Binding(get: { launchAtLogin }, set: { on in
+                    SGToggle(isOn: Binding(get: { launchAtLogin }, set: { on in
                         LaunchAtLogin.set(on); launchAtLogin = LaunchAtLogin.isEnabled
-                    })).labelsHidden().toggleStyle(.switch)
+                    }))
+                    .accessibilityLabel(L("Apri all'accesso"))
                 }
             }
 
             if let m = checker.message {
-                Text(m).font(.callout).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+                Text(m).font(SG.Font.body).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
             HStack {
                 Button(L("Verifica di nuovo")) { Task { await checker.checkAll() } }
+                    .buttonStyle(SGCapsuleButtonStyle(.secondary, size: .large))
                 Spacer()
                 if checker.mic == .authorized && !model.isCalibrated {
                     Button(L("Calibra ora")) { close(); model.showCalibration() }
-                        .keyboardShortcut(.defaultAction).glassProminentButton()
+                        .keyboardShortcut(.defaultAction)
+                        .buttonStyle(SGCapsuleButtonStyle(.primary, size: .large))
                 } else {
+                    // Con il microfono concesso "Fatto" è l'azione principale; altrimenti "Più tardi" è solo un congedo.
                     Button(checker.mic == .authorized ? L("Fatto") : L("Più tardi"), action: close)
                         .keyboardShortcut(.defaultAction)
+                        .buttonStyle(SGCapsuleButtonStyle(checker.mic == .authorized ? .primary : .secondary, size: .large))
                 }
             }
         }
         .padding(28)
         .padding(.top, 12)
         .frame(width: Self.size.width, height: Self.size.height)
+        .sguardoAccent(default: .knock)
         .task { await checker.checkAll() }
         .onAppear { checker.startWatching() }
         .onReceive(Timer.publish(every: 1, on: .main, in: .common).autoconnect()) { _ in
@@ -251,18 +259,24 @@ struct PermissionsView: View {
         }()
         return PermissionRow(symbol: "mic", title: L("Microfono"), detail: detail, status: status, optional: false) {
             HStack(spacing: 6) {
+                // I pulsanti restano su una riga: è il testo accanto a andare a capo.
                 switch checker.mic {
                 case .notDetermined:
-                    Button(L("Consenti")) { checker.requestMicrophone() }.glassProminentButton()
+                    Button(L("Consenti")) { checker.requestMicrophone() }.buttonStyle(.sgPrimary)
                 case .authorized:
-                    if checker.micTest == .failed { Button(L("Reimposta")) { checker.resetMicrophone() } }
+                    if checker.micTest == .failed {
+                        Button(L("Reimposta")) { checker.resetMicrophone() }.buttonStyle(.sgSecondary)
+                    }
                 default:
                     Button(L("Apri Impostazioni")) {
                         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!)
                     }
-                    Button(L("Reimposta")) { checker.resetMicrophone() }
+                    .buttonStyle(.sgSecondary)
+                    Button(L("Reimposta")) { checker.resetMicrophone() }.buttonStyle(.sgSecondary)
                 }
             }
+            .lineLimit(1)
+            .fixedSize()
         }
     }
 
@@ -288,17 +302,18 @@ private struct PermissionRow<Accessory: View>: View {
     let status: PermissionsChecker.Status
     let optional: Bool
     @ViewBuilder let accessory: () -> Accessory
+    @Environment(\.sgAccent) private var accent
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: symbol).font(.title3).foregroundStyle(Color.accentColor).frame(width: 26)
+            Image(systemName: symbol).font(.system(size: 17)).foregroundStyle(accent.base).frame(width: 26)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(title).font(.headline)
+                    Text(title).font(SG.Font.bodyEmphasis)
                     badge
                 }
-                Text(detail).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                Text(detail).font(SG.Font.caption).foregroundStyle(SG.Ink.secondary).fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 8)
             accessory()
@@ -310,14 +325,15 @@ private struct PermissionRow<Accessory: View>: View {
     /// Stato con icona e parola: il colore non è mai l'unico segnale.
     @ViewBuilder private var badge: some View {
         switch status {
-        case .ok: Label(L("ok"), systemImage: "checkmark.circle.fill").foregroundStyle(Palette.calm)
+        case .ok: Label(L("ok"), systemImage: "checkmark.circle.fill").font(SG.Font.caption).foregroundStyle(Palette.calm)
         case .checking: ProgressView().controlSize(.mini)
         case .missing:
-            if optional { Label(L("facoltativo"), systemImage: "minus.circle").foregroundStyle(.secondary) }
-            else { Label(L("da concedere"), systemImage: "exclamationmark.circle.fill").foregroundStyle(.orange) }
+            if optional { Label(L("facoltativo"), systemImage: "minus.circle").font(SG.Font.caption).foregroundStyle(SG.Ink.secondary) }
+            else { Label(L("da concedere"), systemImage: "exclamationmark.circle.fill").font(SG.Font.caption).foregroundStyle(.orange) }
         case .failed:
             Label(optional ? L("non disponibile") : L("non funziona"), systemImage: "xmark.circle.fill")
-                .foregroundStyle(optional ? Color.secondary : Palette.alarm)
+                .font(SG.Font.caption)
+                .foregroundStyle(optional ? SG.Ink.secondary : Palette.alarm)
         case .unknown: EmptyView()
         }
     }

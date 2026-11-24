@@ -127,22 +127,27 @@ struct CalibrationView: View {
         .padding(28)
         .padding(.top, 10)
         .frame(width: Self.size.width, height: Self.size.height)
+        .sguardoAccent(default: .knock)
     }
 
     private var intro: some View {
         VStack(spacing: 16) {
-            Text(L("Calibrazione")).font(.title2.weight(.semibold))
+            Text(L("Calibrazione")).font(SG.Font.title).accessibilityAddTraits(.isHeader)
             TableMap(highlight: nil)
             Text(L("Metti quattro segni sul tavolo (post-it o monete) nei punti della mappa, a circa 10 cm dal Mac. Ti dirò ogni volta dove toccare e quante volte. Non spostare il Mac durante la calibrazione."))
+                .font(SG.Font.body)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             Text(L("%d gruppi, circa un minuto e mezzo.", session.steps.count))
-                .foregroundStyle(.secondary)
+                .font(SG.Font.body)
+                .foregroundStyle(SG.Ink.secondary)
             Spacer()
             HStack {
                 Button(L("Annulla"), action: close).keyboardShortcut(.cancelAction)
+                    .buttonStyle(SGCapsuleButtonStyle(.secondary, size: .large))
                 Spacer()
-                Button(L("Inizia")) { session.start() }.keyboardShortcut(.defaultAction).glassProminentButton()
+                Button(L("Inizia")) { session.start() }.keyboardShortcut(.defaultAction)
+                    .buttonStyle(SGCapsuleButtonStyle(.primary, size: .large))
             }
         }
     }
@@ -151,18 +156,19 @@ struct CalibrationView: View {
         VStack(spacing: 16) {
             ProgressView(value: Double(session.index), total: Double(session.steps.count))
             Text(L("Gruppo %d di %d", min(session.index + 1, session.steps.count), session.steps.count))
-                .font(.callout.monospacedDigit()).foregroundStyle(.secondary)
+                .font(SG.Font.body.monospacedDigit()).foregroundStyle(SG.Ink.secondary)
             if let step = session.current {
                 TableMap(highlight: step.zone)
-                Text(step.zone.hint).font(.callout).multilineTextAlignment(.center)
+                Text(step.zone.hint).font(SG.Font.instruction).multilineTextAlignment(.center)
                 Text(step.taps == 2 ? L("Tocca 2 volte") : L("Tocca 3 volte"))
-                    .font(.system(size: 26, weight: .bold))
+                    .font(SG.Font.title)
                     .accessibilityAddTraits(.isHeader)
             }
-            Text(session.feedback).foregroundStyle(.secondary).frame(height: 20)
+            Text(session.feedback).font(SG.Font.body).foregroundStyle(SG.Ink.secondary).frame(height: 20)
             Spacer()
             HStack {
                 Button(L("Interrompi")) { session.cancel(); close() }.keyboardShortcut(.cancelAction)
+                    .buttonStyle(SGCapsuleButtonStyle(.secondary, size: .large))
                 Spacer()
             }
         }
@@ -170,28 +176,31 @@ struct CalibrationView: View {
 
     private var done: some View {
         VStack(spacing: 16) {
-            Image(systemName: "checkmark.circle.fill").font(.system(size: 44)).foregroundStyle(Palette.calm)
+            SGCheckmark(size: 52)
                 .accessibilityHidden(true)
-            Text(L("Calibrazione finita")).font(.title2.weight(.semibold))
+            Text(L("Calibrazione finita")).font(SG.Font.title).accessibilityAddTraits(.isHeader)
             if let r = session.result {
                 Text(L("Zone riconosciute negli esempi: %d%%", Int((r.accuracy * 100).rounded())))
-                    .font(.title3.monospacedDigit())
+                    .font(SG.Font.instruction.monospacedDigit())
                 Text(r.accuracy >= 0.85
                      ? L("Bene. Da ora i tap in queste zone diventano interruttori.")
                      : L("Così così: prova a toccare sempre lo stesso punto, un po' più deciso, e ricalibra."))
-                    .multilineTextAlignment(.center).foregroundStyle(.secondary)
+                    .font(SG.Font.body)
+                    .multilineTextAlignment(.center).foregroundStyle(SG.Ink.secondary)
                 if session.mode == .motionOnly {
-                    Text(L("Calibrazione per l'ascolto con i soli sensori.")).font(.callout).foregroundStyle(.secondary)
+                    Text(L("Calibrazione per l'ascolto con i soli sensori.")).font(SG.Font.field).foregroundStyle(SG.Ink.secondary)
                 } else if !r.usesMotion {
                     Text(L("Il sensore di movimento non ha risposto: uso solo il microfono."))
-                        .font(.callout).foregroundStyle(.secondary)
+                        .font(SG.Font.field).foregroundStyle(SG.Ink.secondary)
                 }
             }
             Spacer()
             HStack {
                 Button(L("Rifai")) { session.start() }
+                    .buttonStyle(SGCapsuleButtonStyle(.secondary, size: .large))
                 Spacer()
-                Button(L("Salva")) { session.save(); close() }.keyboardShortcut(.defaultAction).glassProminentButton()
+                Button(L("Salva")) { session.save(); close() }.keyboardShortcut(.defaultAction)
+                    .buttonStyle(SGCapsuleButtonStyle(.primary, size: .large))
             }
         }
     }
@@ -200,12 +209,14 @@ struct CalibrationView: View {
         VStack(spacing: 16) {
             Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 40)).foregroundStyle(.orange)
                 .accessibilityHidden(true)
-            Text(why).multilineTextAlignment(.center)
+            Text(why).font(SG.Font.body).multilineTextAlignment(.center)
             Spacer()
             HStack {
                 Button(L("Chiudi"), action: close).keyboardShortcut(.cancelAction)
+                    .buttonStyle(SGCapsuleButtonStyle(.secondary, size: .large))
                 Spacer()
                 Button(L("Riprova")) { session.start() }.keyboardShortcut(.defaultAction)
+                    .buttonStyle(SGCapsuleButtonStyle(.primary, size: .large))
             }
         }
     }
@@ -214,17 +225,18 @@ struct CalibrationView: View {
 /// La mappa del tavolo: il Mac al centro e le quattro zone; quella da toccare è piena e con l'etichetta.
 struct TableMap: View {
     let highlight: Zone?
+    @Environment(\.sgAccent) private var accent
 
     var body: some View {
         HStack(spacing: 34) {
             VStack(spacing: 46) { dot(.topLeft); dot(.bottomLeft) }
             VStack(spacing: 0) {
-                RoundedRectangle(cornerRadius: 6).strokeBorder(.secondary, lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(SG.Ink.secondary, lineWidth: 1.5)
                     .frame(width: 120, height: 62)
-                    .overlay(Text(L("schermo")).font(.caption).foregroundStyle(.secondary))
-                RoundedRectangle(cornerRadius: 6).fill(.quaternary)
+                    .overlay(Text(L("schermo")).font(SG.Font.caption).foregroundStyle(SG.Ink.secondary))
+                RoundedRectangle(cornerRadius: 6, style: .continuous).fill(SG.Fill.neutralButton)
                     .frame(width: 130, height: 58)
-                    .overlay(Text(L("tastiera")).font(.caption).foregroundStyle(.secondary))
+                    .overlay(Text(L("tastiera")).font(SG.Font.caption).foregroundStyle(SG.Ink.secondary))
             }
             VStack(spacing: 46) { dot(.topRight); dot(.bottomRight) }
         }
@@ -235,11 +247,12 @@ struct TableMap: View {
     private func dot(_ zone: Zone) -> some View {
         let on = highlight == zone
         return ZStack {
-            Circle().fill(on ? Color.accentColor : Color.clear).frame(width: 34, height: 34)
-            Circle().strokeBorder(on ? Color.accentColor : Color.secondary, lineWidth: on ? 3 : 1.5).frame(width: 34, height: 34)
-            if on { Image(systemName: "hand.tap.fill").foregroundStyle(.white).font(.system(size: 15)) }
+            Circle().fill(on ? accent.base : Color.clear).frame(width: 34, height: 34)
+            Circle().strokeBorder(on ? accent.base : SG.Ink.secondary, lineWidth: on ? 3 : 1.5).frame(width: 34, height: 34)
+            if on { Image(systemName: "hand.tap.fill").foregroundStyle(SG.Ink.onAccent).font(.system(size: 15)) }
         }
         .frame(width: 44, height: 44)
+        .animation(SG.Motion.snappy, value: on)
     }
 }
 

@@ -14,8 +14,15 @@ App macOS per la barra dei menu (Swift/SwiftUI, macOS 14+): tap sul tavolo accan
 - Testi: chiave = frase italiana, `L("…")`; ogni chiave nuova va in `Localization/en.lproj/Localizable.strings`.
   Controllo: `python3 -I tools/check-strings.py`.
 - Versione: `VERSION` + sezione `## <versione> · <data>` in cima a `CHANGELOG.md` e `CHANGELOG.en.md`.
-- Design: Human Interface Guidelines; colore mai unico segnale; vetro solo sui controlli che galleggiano, dietro
-  `if #available(macOS 26, *)` (`Sources/Island/Style.swift`). Interfaccia in italiano e inglese, niente emoji.
+- Design: Human Interface Guidelines; colore mai unico segnale. Grafica: Sguardo, il sistema di design comune
+  (github.com/GGuidotz/sguardo, submodule in `Vendor/Sguardo`, regole in DESIGN.md e PLAYBOOK.md), compilato insieme
+  all'app da build.sh (`SGUARDO_DIR` per provare il kit locale). Accento predefinito `SG.Accent.knock` (verde calmo,
+  `Palette.calm`), applicato a ogni finestra con `.sguardoAccent(default: .knock)`: in Generale la persona sceglie
+  colore dell'app, di sistema o personalizzato (`SGAccentRow`). Righe e schede con `SGPage`/`SGSection`/`contentCard`,
+  pulsanti nel contenuto `.buttonStyle(.sgSecondary/.sgPrimary)`. Vetro solo sui controlli che galleggiano (barra delle
+  schede `SGFloatingTabBar`), dietro `if #available(macOS 26, *)` (`Sources/Island/Style.swift`). Le viste di
+  `Sources/Island` usano Sguardo: chi le compila (altre app) deve compilare anche i sorgenti di Sguardo.
+  Interfaccia in italiano e inglese, niente emoji.
 - Leggerezza: sotto l'1% di CPU in ascolto; in pausa, senza calibrazione o con il Mac in stop niente microfono né sensori.
 - Prove guidate: meglio sessioni passo per passo (mappa del tavolo, "tocca 2 volte qui") a istruzioni lunghe.
 - Repo pubblico: mai dati personali in codice, commenti, commit.

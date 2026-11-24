@@ -17,67 +17,105 @@ struct ActionsSettings: View {
     }
 
     var body: some View {
-        Form {
-            Section {
-                Picker(L("Profilo"), selection: Binding(get: { selected ?? prefs.profiles.first?.id }, set: { selected = $0 })) {
-                    ForEach(prefs.profiles) { p in Text(Self.name(p)).tag(Optional(p.id)) }
-                }
-                HStack {
-                    Button(L("Aggiungi un'app…")) { addApp() }
-                    if let i = index, !prefs.profiles[i].isGlobal {
-                        Button(L("Rimuovi questo profilo")) {
-                            prefs.profiles.remove(at: i)
-                            selected = prefs.profiles.first?.id
+        SGPage {
+            SGSection {
+                SGMenuRow(L("Profilo"),
+                          selection: Binding(get: { selected ?? prefs.profiles.first?.id }, set: { selected = $0 }),
+                          options: prefs.profiles.map { (value: Optional($0.id), title: Self.name($0)) })
+                SGDivider()
+                SGRowBlock {
+                    // Con un profilo di app i tre pulsanti possono non starci in una riga: allora il terzo va sotto.
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 8) {
+                            addButton
+                            removeButton
+                            Spacer(minLength: 0)
+                            restoreButton
                         }
-                    }
-                    Spacer()
-                    Button(L("Ripristina i profili pronti")) {
-                        prefs.profiles = ActionProfiles.defaults
-                        selected = prefs.profiles.first?.id
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 8) { addButton; removeButton }
+                            restoreButton
+                        }
                     }
                 }
             } footer: {
                 if let i = index, !prefs.profiles[i].isGlobal {
-                    Footnote(L("Vale quando %@ è in primo piano. Dove qui non c'è un'azione, vale quella di Sempre.", Self.name(prefs.profiles[i])))
+                    SGFootnote(L("Vale quando %@ è in primo piano. Dove qui non c'è un'azione, vale quella di Sempre.", Self.name(prefs.profiles[i])))
                 } else {
-                    Footnote(L("Sempre: vale in qualunque app, tranne dove il profilo dell'app in primo piano dice altro."))
+                    SGFootnote(L("Sempre: vale in qualunque app, tranne dove il profilo dell'app in primo piano dice altro."))
                 }
             }
 
             if let i = index {
                 ForEach(Zone.allCases) { zone in
-                    Section {
-                        ForEach(TapCount.allCases) { count in
-                            let s = TapSwitch(zone: zone, count: count)
-                            LabeledContent(count.title) {
-                                ActionEditor(action: Binding(
-                                    get: { prefs.profiles[i].action(for: s) },
-                                    set: { prefs.profiles[i].set($0, for: s) }
-                                ))
+                    // Come SGSection, ma con il simbolo della zona accanto al titolo.
+                    VStack(alignment: .leading, spacing: 0) {
+                        ZoneTitle(zone: zone)
+                        SGGroup {
+                            ForEach(Array(TapCount.allCases.enumerated()), id: \.element) { n, count in
+                                if n > 0 { SGDivider() }
+                                let s = TapSwitch(zone: zone, count: count)
+                                SGLabeledRow {
+                                    Text(count.title)
+                                } trailing: {
+                                    ActionEditor(action: Binding(
+                                        get: { prefs.profiles[i].action(for: s) },
+                                        set: { prefs.profiles[i].set($0, for: s) }
+                                    ))
+                                }
                             }
                         }
-                    } header: {
-                        Label(zone.title, systemImage: Self.symbol(zone))
                     }
                 }
             }
 
-            Section {
-                LabeledContent(L("Accessibilità")) {
+            SGSection {
+                SGLabeledRow {
+                    Text(L("Accessibilità"))
+                } trailing: {
                     if accessibility {
-                        Label(L("Concesso"), systemImage: "checkmark.circle.fill").foregroundStyle(Palette.calm)
+                        Label(L("Concesso"), systemImage: "checkmark.circle.fill")
+                            .font(SG.Font.body)
+                            .foregroundStyle(Palette.calm)
                     } else {
                         Button(L("Consenti…")) { ActionRunner.requestAccessibility() }
+                            .buttonStyle(.sgSecondary)
                     }
                 }
             } footer: {
-                Footnote(L("Serve solo per le azioni che premono un tasto: il tasto va all'app in primo piano, come se lo premessi tu. Nell'app di Claude e nel Terminale Invio approva la scelta evidenziata ed Esc rifiuta."))
+                SGFootnote(L("Serve solo per le azioni che premono un tasto: il tasto va all'app in primo piano, come se lo premessi tu. Nell'app di Claude e nel Terminale Invio approva la scelta evidenziata ed Esc rifiuta."))
             }
         }
         .onAppear { accessibility = ActionRunner.hasAccessibility }
         .onReceive(Timer.publish(every: 2, on: .main, in: .common).autoconnect()) { _ in
             accessibility = ActionRunner.hasAccessibility
         }
+    }
+
+    private var addButton: some View {
+        Button(L("Aggiungi un'app…")) { addApp() }
+            .buttonStyle(.sgSecondary)
+            .fixedSize()
+    }
+
+    @ViewBuilder private var removeButton: some View {
+        if let i = index, !prefs.profiles[i].isGlobal {
+            Button(L("Rimuovi questo profilo")) {
+                prefs.profiles.remove(at: i)
+                selected = prefs.profiles.first?.id
+            }
+            .buttonStyle(.sgSecondary)
+            .fixedSize()
+        }
+    }
+
+    private var restoreButton: some View {
+        Button(L("Ripristina i profili pronti")) {
+            prefs.profiles = ActionProfiles.defaults
+            selected = prefs.profiles.first?.id
+        }
+        .buttonStyle(.sgSecondary)
+        .fixedSize()
     }
 
     static func name(_ p: ActionProfile) -> String { p.isGlobal ? L("Sempre") : p.name }
@@ -103,11 +141,30 @@ struct ActionsSettings: View {
     }
 }
 
-private struct Footnote: View {
-    var text: String
-    init(_ text: String) { self.text = text }
+/// Titolo di una zona: come SGSectionTitle, con il simbolo.
+private struct ZoneTitle: View {
+    let zone: Zone
+
     var body: some View {
-        Text(text).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        Label(zone.title, systemImage: ActionsSettings.symbol(zone))
+            .font(SG.Font.bodyEmphasis)
+            .foregroundStyle(SG.Ink.secondary)
+            .padding(.horizontal, SG.Space.sectionTitleInset)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
+private extension View {
+    /// Campo di testo a capsula per le righe (Sguardo ha quello dell'isola, nero; qui serve quello chiaro e scuro).
+    func sgCapsuleField(width: CGFloat) -> some View {
+        self.textFieldStyle(.plain)
+            .font(SG.Font.field)
+            .padding(.horizontal, 12)
+            .frame(width: width, height: SG.Size.buttonSmall)
+            .background(Capsule().fill(SG.Fill.pickerPill))
+            .overlay(Capsule().strokeBorder(SG.Fill.rowBorder, lineWidth: SG.Stroke.hairline))
     }
 }
 
@@ -120,14 +177,11 @@ struct ActionEditor: View {
     var body: some View {
         HStack(spacing: 6) {
             detail
-            Menu {
+            SGPickerPill(action.kind.title) {
                 ForEach(TapAction.Kind.allCases) { k in
                     Button { choose(k) } label: { Label(k.title, systemImage: k.symbol) }
                 }
-            } label: {
-                Label(action.kind.title, systemImage: action.kind.symbol)
             }
-            .fixedSize()
         }
         .onDisappear { stopRecording() }
     }
@@ -136,16 +190,19 @@ struct ActionEditor: View {
         switch action {
         case .key(let k):
             Button(recording ? L("Premi un tasto…") : k.label) { recording ? stopRecording() : startRecording() }
+                .buttonStyle(.sgSecondary)
                 .monospaced()
                 .help(L("Clicca e premi il tasto o la combinazione da mandare"))
         case .openApp(_, let name):
             Button(name) { if let a = AppPicker.choose() { action = .openApp(bundleID: a.bundleID, name: a.name) } }
+                .buttonStyle(.sgSecondary)
+                .lineLimit(1)
         case .shortcut(let name):
             TextField(L("Nome del Comando Rapido"), text: Binding(get: { name }, set: { action = .shortcut(name: $0) }))
-                .frame(width: 150)
+                .sgCapsuleField(width: 150)
         case .openURL(let url):
             TextField("https://…", text: Binding(get: { url }, set: { action = .openURL($0) }))
-                .frame(width: 150)
+                .sgCapsuleField(width: 150)
         default:
             EmptyView()
         }

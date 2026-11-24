@@ -85,6 +85,10 @@
 "Le note complete sono in Impostazioni › Aggiornamenti." = "The full notes are in Settings › Updates.";
 "Letto come %d tap: va bene lo stesso." = "Heard as %d taps: that's fine too.";
 "Lingua" = "Language";
+"Colore d'accento" = "Accent color";
+"Colore dell'app" = "App color";
+"Colore di sistema" = "System color";
+"Personalizzato" = "Custom";
 "Mai" = "Never";
 "Mappa delle quattro zone" = "Map of the four zones";
 "Memoria" = "Memory";

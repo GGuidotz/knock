@@ -85,13 +85,13 @@ struct WhatsNewView: View {
                 .padding(.horizontal, 32)
                 .padding(.top, 40)
                 .padding(.bottom, 18)
-            Divider()
+            hairline
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     ForEach(entries) { entry in
                         if entries.count > 1 {
                             Text(L("Versione %@", entry.version))
-                                .font(.title3.weight(.semibold))
+                                .font(SG.Font.instruction)
                         }
                         ForEach(entry.sections) { section in
                             SectionBlock(section: section)
@@ -102,21 +102,25 @@ struct WhatsNewView: View {
                 .padding(.vertical, 22)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            Divider()
+            hairline
             HStack {
                 Text(L("Le note complete sono in Impostazioni › Aggiornamenti."))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(SG.Font.caption)
+                    .foregroundStyle(SG.Ink.secondary)
                 Spacer()
                 Button(L("Continua"), action: close)
-                    .glassProminentButton()
-                    .controlSize(.large)
+                    .buttonStyle(SGCapsuleButtonStyle(.primary, size: .large))
                     .keyboardShortcut(.defaultAction)
             }
             .padding(.horizontal, 32)
             .padding(.vertical, 16)
         }
         .frame(width: Self.size.width, height: Self.size.height)
+        .sguardoAccent(default: .knock)
+    }
+
+    private var hairline: some View {
+        Rectangle().fill(SG.Fill.rowBorder).frame(height: SG.Stroke.hairline)
     }
 
     private var header: some View {
@@ -127,15 +131,14 @@ struct WhatsNewView: View {
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 6) {
                 Text(L("Novità"))
-                    .font(.callout.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .font(SG.Font.label)
+                    .foregroundStyle(SG.Ink.secondary)
                 Text(verbatim: "Knock \(entries.first?.version ?? "")")
-                    .font(.largeTitle.weight(.semibold))
-                    .fontDesign(.rounded)
+                    .font(SG.Font.title)
                 if let summary = entries.first?.summary, !summary.isEmpty {
                     Text(summary)
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
+                        .font(SG.Font.instruction)
+                        .foregroundStyle(SG.Ink.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -145,42 +148,47 @@ struct WhatsNewView: View {
     }
 }
 
-/// Un gruppo (New features, Improvements, Bug fixes): intestazione con simbolo e conteggio, poi le voci.
+/// Un gruppo (New features, Improvements, Bug fixes): intestazione con simbolo e conteggio, poi le voci su una scheda.
 private struct SectionBlock: View {
     let section: ChangelogSection
+    @Environment(\.sgAccent) private var accent
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: section.symbol)
                     .foregroundStyle(tint)
                     .accessibilityHidden(true)
-                Text(Self.executiveTitle(section.title).uppercased())
-                    .font(.caption.weight(.bold))
-                    .tracking(0.8)
+                Text(Self.executiveTitle(section.title))
+                    .font(SG.Font.bodyEmphasis)
+                    .foregroundStyle(SG.Ink.secondary)
                 Text("\(section.items.count)")
-                    .font(.caption.weight(.semibold))
+                    .font(SG.Font.label)
                     .monospacedDigit()
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 6)
+                    .foregroundStyle(SG.Ink.secondary)
+                    .padding(.horizontal, 7)
                     .padding(.vertical, 1)
-                    .background(Color.primary.opacity(0.08), in: Capsule())
+                    .background(SG.Fill.pickerPill, in: Capsule())
                     .accessibilityLabel(L("%d voci", section.items.count))
             }
-            ForEach(section.items, id: \.self) { item in
-                let parts = Self.split(item)
-                VStack(alignment: .leading, spacing: 2) {
-                    if let title = parts.title {
-                        Text(title).font(.body.weight(.semibold))
+            .padding(.horizontal, SG.Space.sectionTitleInset)
+            VStack(alignment: .leading, spacing: 14) {
+                ForEach(section.items, id: \.self) { item in
+                    let parts = Self.split(item)
+                    VStack(alignment: .leading, spacing: 3) {
+                        if let title = parts.title {
+                            Text(title).font(SG.Font.bodyEmphasis).foregroundStyle(SG.Ink.primary)
+                        }
+                        Text((try? AttributedString(markdown: parts.detail)) ?? AttributedString(parts.detail))
+                            .font(parts.title == nil ? SG.Font.body : SG.Font.field)
+                            .foregroundStyle(parts.title == nil ? SG.Ink.primary : SG.Ink.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    Text((try? AttributedString(markdown: parts.detail)) ?? AttributedString(parts.detail))
-                        .font(parts.title == nil ? .body : .callout)
-                        .foregroundStyle(parts.title == nil ? Color.primary : Color.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityElement(children: .combine)
                 }
-                .padding(.leading, 26)
-                .accessibilityElement(children: .combine)
             }
+            .contentCard(padding: SG.Space.rowInset)
         }
     }
 
@@ -190,7 +198,7 @@ private struct SectionBlock: View {
         case "novità", "new features": Palette.calm
         case "correzioni", "bug fixes": .orange
         case "sicurezza", "security": .red
-        default: .accentColor
+        default: accent.base
         }
     }
 

@@ -64,10 +64,12 @@ Homebrew downloads the DMG from the release, copies the app to Applications and 
 notarized). On first launch a short guide asks for microphone permission and leads to calibration.
 Update: `brew update && brew upgrade --cask knock`.
 
-From source (needs Xcode or the command line tools):
+From source (needs Xcode or the command line tools). `--recursive` also fetches Sguardo, the shared design system
+(github.com/GGuidotz/sguardo), into `Vendor/Sguardo`; if you already cloned without it, run
+`git submodule update --init`:
 
 ```sh
-git clone https://github.com/GGuidotz/knock.git ~/Developer/knock
+git clone --recursive https://github.com/GGuidotz/knock.git ~/Developer/knock
 cd ~/Developer/knock && ./build.sh --install
 ```
 

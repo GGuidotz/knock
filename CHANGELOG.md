@@ -1,5 +1,14 @@
 # Novità di Knock
 
+## 0.2.2 · 2026-11-24
+Una veste nuova: forme, colori e movimenti di Sguardo, il sistema di design comune alle nostre app.
+
+### Miglioramenti
+- **Impostazioni ridisegnate.** Righe su un velo traslucido con un filo sottile, menu a capsula e note brevi sotto ogni gruppo. La barra delle schede galleggia in fondo e mostra il nome della scheda scelta; ⌘1…⌘5 funzionano come prima.
+- **Colore d'accento a scelta.** In Impostazioni › Generale: il verde di Knock, il colore d'accento di macOS o uno tuo.
+- **Guida, calibrazione, permessi e novità nello stesso stile.** Pulsanti a capsula, titoli più chiari, i passaggi della guida si cambiano con una dissolvenza morbida.
+- **Si compila da un clone.** Sguardo arriva con `git clone --recursive`: chi compila dal codice ha tutto.
+
 ## 0.2.1 · 2026-11-17
 Aggiornamento di sicurezza.
 
